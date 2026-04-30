@@ -1,5 +1,7 @@
 <?php
 
+use App\Exceptions\MessageError;
+use App\Http\Resources\ErrorResource;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,5 +17,13 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (MessageError $e) {
+            return (new ErrorResource([
+                'status' => $e->statusCode,
+                'message' => $e->errorMessage,
+                'data' => $e->data,
+            ]))
+                ->response()
+                ->setStatusCode($e->statusCode);
+        });
     })->create();
