@@ -61,7 +61,7 @@ class AuthController extends Controller
     public function logout(): MessageResource
     {
         $token = request()->user()->currentAccessToken();
-        logger("user",$token);
+
 
         if (! $token) {
             throw new MessageError(
@@ -73,7 +73,6 @@ class AuthController extends Controller
         if ($token) {
             $token->delete();
         }
-
 
         return new MessageResource([
             'status' => 200,
