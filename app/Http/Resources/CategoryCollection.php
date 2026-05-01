@@ -6,15 +6,15 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
-class OrderCollection extends ResourceCollection
+class CategoryCollection extends ResourceCollection
 {
-    public $collects = OrderResource::class;
+    public $collects = CategoryResource::class;
 
     public function toArray(Request $request): array
     {
         return [
             'status' => 200,
-            'message' => 'Orders fetched successfully.',
+            'message' => 'Categories fetched successfully.',
             'data' => [
                 'items' => $this->collection,
                 'pagination' => [

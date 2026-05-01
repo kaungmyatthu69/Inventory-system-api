@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\HttpStatus;
 use App\Exceptions\MessageError;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
@@ -14,10 +15,10 @@ class AuthController extends Controller
     public function register(RegisterRequest $request): MessageResource
     {
         $user = User::create($request->validated());
-        $token = $user->createToken('api-token')->plainTextToken;
+        $token = $user->createToken('auth-token')->plainTextToken;
 
         return new MessageResource([
-            'status' => 201,
+            'status' => HttpStatus::CREATED->value,
             'message' => 'Registration successful.',
             'data' => [
                 'user' => [
@@ -36,15 +37,16 @@ class AuthController extends Controller
         if (! Auth::attempt($request->validated())) {
             throw new MessageError(
                 errorMessage: 'Invalid email or password.',
-                statusCode: 401,
+                statusCode: HttpStatus::UNAUTHORIZED->value,
             );
         }
 
         $user = $request->user();
-        $token = $user->createToken('api-token')->plainTextToken;
+        $user->tokens()->delete();
+        $token = $user->createToken('auth-token')->plainTextToken;
 
         return new MessageResource([
-            'status' => 200,
+            'status' => HttpStatus::OK->value,
             'message' => 'Login successful.',
             'data' => [
                 'user' => [
@@ -62,20 +64,17 @@ class AuthController extends Controller
     {
         $token = request()->user()->currentAccessToken();
 
-
         if (! $token) {
             throw new MessageError(
-                errorMessage: 'User Already logged out.',
-                statusCode: 401,
+                errorMessage: 'User already logged out.',
+                statusCode: HttpStatus::UNAUTHORIZED->value,
             );
         }
 
-        if ($token) {
-            $token->delete();
-        }
+        $token->delete();
 
         return new MessageResource([
-            'status' => 200,
+            'status' => HttpStatus::OK->value,
             'message' => 'Logout successful.',
             'data' => null,
         ]);

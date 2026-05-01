@@ -8,7 +8,7 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class ProductCollection extends ResourceCollection
 {
-    public $collects = ProductResourceItem::class;
+    public $collects = ProductResource::class;
 
     public function toArray(Request $request): array
     {

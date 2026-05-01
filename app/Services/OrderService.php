@@ -13,11 +13,12 @@ use Illuminate\Support\Facades\DB;
 
 class OrderService
 {
-    public function list(): LengthAwarePaginator
+    public function list(array $filters): LengthAwarePaginator
     {
         return Order::query()
             ->where('user_id', Auth::id())
             ->with('items.product')
+            ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
             ->latest()
             ->paginate(20);
     }
@@ -27,7 +28,6 @@ class OrderService
         return DB::transaction(function () use ($items) {
             $products = $this->resolveProducts($items);
             $totalPrice = '0.00';
-
 
             $orderItems = collect($items)->map(function (array $item) use ($products, &$totalPrice) {
                 $product = $products->get($item['product_id']);
@@ -63,19 +63,22 @@ class OrderService
         });
     }
 
-    public function find(string $id, string $userId): ?Order
+    public function findOrFail(string $id, string $userId): Order
     {
         return Order::query()
             ->where('user_id', $userId)
             ->with('items.product')
-            ->find($id);
+            ->findOrFail($id);
     }
 
     private function resolveProducts(array $items): Collection
     {
         $productIds = collect($items)->pluck('product_id')->unique();
 
-        $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+        $products = Product::whereIn('id', $productIds)
+            ->lockForUpdate()
+            ->get()
+            ->keyBy('id');
 
         if ($products->count() !== $productIds->count()) {
             throw new MessageError('One or more selected products do not exist.', 422);

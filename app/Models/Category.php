@@ -7,13 +7,13 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['name', 'price', 'stock'])]
-class Product extends Model
+#[Fillable(['name'])]
+class Category extends Model
 {
     use HasFactory, HasUuids;
 
-    public function categories()
+    public function products()
     {
-        return $this->belongsToMany(Category::class);
+        return $this->belongsToMany(Product::class);
     }
 }

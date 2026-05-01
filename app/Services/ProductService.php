@@ -7,28 +7,42 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ProductService
 {
-    public function list(): LengthAwarePaginator
+    public function list(array $filters): LengthAwarePaginator
     {
         return Product::query()
+            ->with('categories')
+            ->when($filters['search'] ?? null, fn ($q, $search) => $q->where('name', 'like', "%{$search}%"))
+            ->when($filters['category'] ?? null, fn ($q, $category) => $q->whereHas('categories', fn ($q) => $q->where('name', $category)))
             ->latest()
-            ->paginate(20);
+            ->paginate(5);
     }
 
     public function create(array $data): Product
     {
-        return Product::create($data);
+        $categories = $data['categories'] ?? [];
+        unset($data['categories']);
+
+        $product = Product::create($data);
+        $product->categories()->sync($categories);
+
+        return $product->load('categories');
     }
 
-    public function find(string $id): ?Product
+    public function findOrFail(string $id): Product
     {
-        return Product::find($id);
+        return Product::with('categories')->findOrFail($id);
     }
 
     public function update(Product $product, array $data): Product
     {
+        if (array_key_exists('categories', $data)) {
+            $product->categories()->sync($data['categories']);
+            unset($data['categories']);
+        }
+
         $product->update($data);
 
-        return $product;
+        return $product->load('categories');
     }
 
     public function delete(Product $product): void

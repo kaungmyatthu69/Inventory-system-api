@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\HttpStatus;
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Resources\MessageResource;
 use App\Http\Resources\OrderCollection;
-use App\Http\Resources\OrderResourceItem;
-use App\Models\Order;
+use App\Http\Resources\OrderResource;
 use App\Services\OrderService;
 
 class OrderController extends Controller
@@ -16,7 +16,7 @@ class OrderController extends Controller
     public function index(): OrderCollection
     {
         return new OrderCollection(
-            $this->orderService->list()
+            $this->orderService->list(request()->only('status'))
         );
     }
 
@@ -25,39 +25,20 @@ class OrderController extends Controller
         $order = $this->orderService->create($request->validated('items'));
 
         return new MessageResource([
-            'status' => 201,
+            'status' => HttpStatus::CREATED->value,
             'message' => 'Order created successfully.',
-            'data' => new OrderResourceItem($order),
+            'data' => new OrderResource($order),
         ]);
     }
 
     public function show(string $id): MessageResource
     {
-        $order = $this->findOrderOrRespond($id);
-
-        if ($order instanceof MessageResource) {
-            return $order;
-        }
+        $order = $this->orderService->findOrFail($id, auth()->id());
 
         return new MessageResource([
-            'status' => 200,
+            'status' => HttpStatus::OK->value,
             'message' => 'Order fetched successfully.',
-            'data' => new OrderResourceItem($order),
+            'data' => new OrderResource($order),
         ]);
-    }
-
-    private function findOrderOrRespond(string $id): Order|MessageResource
-    {
-        $order = $this->orderService->find($id, auth()->id());
-
-        if (! $order) {
-            return new MessageResource([
-                'status' => 404,
-                'message' => 'Order not found.',
-                'data' => null,
-            ]);
-        }
-
-        return $order;
     }
 }

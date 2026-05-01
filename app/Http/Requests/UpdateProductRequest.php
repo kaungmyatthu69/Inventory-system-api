@@ -15,6 +15,8 @@ class UpdateProductRequest extends FormRequest
     {
         return [
             'name' => ['sometimes', 'string'],
+            'categories' => ['nullable', 'array'],
+            'categories.*' => ['string', 'exists:categories,id'],
             'price' => ['sometimes', 'numeric', 'min:0'],
             'stock' => ['sometimes', 'integer', 'min:0'],
         ];
@@ -24,6 +26,8 @@ class UpdateProductRequest extends FormRequest
     {
         return [
             'name.string' => 'Product name must be a valid string.',
+            'categories.array' => 'Categories must be a valid list.',
+            'categories.*.exists' => 'One or more categories do not exist.',
             'price.numeric' => 'Price must be a valid number.',
             'price.min' => 'Price must be at least 0.',
             'stock.integer' => 'Stock must be a valid number.',
