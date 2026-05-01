@@ -1,57 +1,116 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Inventory System API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A RESTful inventory management API built with Laravel 13, providing products, categories, orders, and dashboard statistics with Sanctum token authentication.
 
-## About Laravel
+## Tech Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **PHP** 8.4
+- **Laravel** 13
+- **Laravel Sanctum** 4 (API token authentication)
+- **SQLite**
+- **Pest** 4 (testing)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Setup
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## API Endpoints
 
-## Contributing
+All endpoints are prefixed with `/api/v1`.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Authentication
 
-## Code of Conduct
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/v1/register` | Register a new user | No |
+| POST | `/api/v1/login` | Login and get token | No |
+| POST | `/api/v1/logout` | Logout (revoke token) | Yes |
+| GET | `/api/v1/user` | Get authenticated user | Yes |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Categories
 
-## Security Vulnerabilities
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/v1/categories` | List all categories (paginated) | Yes |
+| POST | `/api/v1/categories` | Create a category | Yes |
+| GET | `/api/v1/categories/{id}` | Get a category | Yes |
+| PUT/PATCH | `/api/v1/categories/{id}` | Update a category | Yes |
+| DELETE | `/api/v1/categories/{id}` | Delete a category | Yes |
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Products
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/v1/products` | List products (paginated, filterable) | Yes |
+| POST | `/api/v1/products` | Create a product | Yes |
+| GET | `/api/v1/products/{id}` | Get a product | Yes |
+| PUT/PATCH | `/api/v1/products/{id}` | Update a product | Yes |
+| DELETE | `/api/v1/products/{id}` | Delete a product | Yes |
+
+**Query params for listing:** `search` (name search), `category` (filter by category name)
+
+### Orders
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/v1/orders` | List user's orders (paginated) | Yes |
+| POST | `/api/v1/orders` | Create an order | Yes |
+| GET | `/api/v1/orders/{id}` | Get an order | Yes |
+
+**Query params for listing:** `status` (pending, completed, cancelled, refunded)
+
+### Dashboard
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/v1/dashboard` | Get dashboard statistics | Yes |
+
+## Authentication
+
+The API uses Laravel Sanctum with Bearer tokens. Tokens expire after 24 hours.
+
+```bash
+# Register
+curl -X POST http://localhost:8000/api/v1/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John","email":"john@example.com","password":"password"}'
+
+# Login
+curl -X POST http://localhost:8000/api/v1/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"john@example.com","password":"password"}'
+
+# Authenticated request
+curl http://localhost:8000/api/v1/products \
+  -H "Authorization: Bearer <your-token>"
+```
+
+## Architecture
+
+```
+Controller → Service → Model
+     ↓           ↓
+ Form Request  API Resource
+```
+
+- **Controllers** handle HTTP request/response delegation
+- **Services** contain business logic (CRUD, order processing with transaction + row locking)
+- **Form Requests** validate input
+- **API Resources** transform model output
+- **Enums** define order statuses and HTTP status codes
+
+## Testing
+
+```bash
+php artisan test
+php artisan test --filter=testName
+```
 
 ## License
 
