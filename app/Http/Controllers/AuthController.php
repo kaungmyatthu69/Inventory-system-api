@@ -6,6 +6,7 @@ use App\Enums\HttpStatus;
 use App\Exceptions\MessageError;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Resources\AuthUserResource;
 use App\Http\Resources\MessageResource;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -20,15 +21,7 @@ class AuthController extends Controller
         return new MessageResource([
             'status' => HttpStatus::CREATED->value,
             'message' => 'Registration successful.',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                ],
-                'token' => $token,
-                'token_type' => 'Bearer',
-            ],
+            'data' => (new AuthUserResource($user, $token))->resolve(),
         ]);
     }
 
@@ -48,15 +41,7 @@ class AuthController extends Controller
         return new MessageResource([
             'status' => HttpStatus::OK->value,
             'message' => 'Login successful.',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                ],
-                'token' => $token,
-                'token_type' => 'Bearer',
-            ],
+            'data' => (new AuthUserResource($user, $token))->resolve(),
         ]);
     }
 
