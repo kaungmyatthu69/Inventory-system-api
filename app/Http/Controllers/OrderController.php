@@ -33,7 +33,7 @@ class OrderController extends Controller
 
     public function show(string $id): MessageResource
     {
-        $order = $this->orderService->findOrFail($id, auth()->id());
+        $order = $this->orderService->findOrFail($id);
 
         return new MessageResource([
             'status' => HttpStatus::OK->value,

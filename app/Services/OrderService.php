@@ -16,8 +16,7 @@ class OrderService
     public function list(array $filters): LengthAwarePaginator
     {
         return Order::query()
-            ->where('user_id', Auth::id())
-            ->with('items.product')
+            ->with(['items.product', 'user'])
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
             ->latest()
             ->paginate(20);
@@ -59,15 +58,14 @@ class OrderService
 
             $this->deductStock($items, $products);
 
-            return $order->load('items.product');
+            return $order->load(['items.product', 'user']);
         });
     }
 
-    public function findOrFail(string $id, string $userId): Order
+    public function findOrFail(string $id): Order
     {
         return Order::query()
-            ->where('user_id', $userId)
-            ->with('items.product')
+            ->with(['items.product', 'user'])
             ->findOrFail($id);
     }
 

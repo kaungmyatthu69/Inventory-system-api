@@ -2,6 +2,7 @@
 
 use App\Exceptions\MessageError;
 use App\Http\Resources\MessageResource;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,6 +20,16 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (AuthenticationException $e) {
+            return (new MessageResource([
+                'status' => 401,
+                'message' => 'Unauthenticated.',
+                'data' => null,
+            ]))
+                ->response()
+                ->setStatusCode(401);
+        });
+
         $exceptions->render(function (MessageError $e) {
             return (new MessageResource([
                 'status' => $e->statusCode,
